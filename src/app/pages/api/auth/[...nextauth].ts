@@ -5,8 +5,8 @@ export default NextAuth({
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        login: {},
-        password: {},
+        login: { label: "login", type: "text", placeholder: "login" },
+        password: { label: "password", type: "password", placeholder: "password" },
       },
       async authorize(credentials, req) {
         const res = await fetch("http://localhost:8080/user/login", {

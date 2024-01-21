@@ -8,3 +8,9 @@
   }
 }
 
+@layer components {
+  .modal-event {
+    @apply z-50
+  }
+}
+

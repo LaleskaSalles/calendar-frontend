@@ -18,7 +18,9 @@ const Login: React.FC = () => {
       redirect: false,
       login: credentials.login,
       password: credentials.password,
+      
     });
+    console.log(result);
   }
 
     return (
