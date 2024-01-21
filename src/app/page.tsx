@@ -8,6 +8,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import Modal from 'react-modal';
 import Navbar from "./components/navbar/page";
+import { preventDefault } from "@fullcalendar/core/internal";
+import { useRouter } from "next/navigation";
 
 
 interface EventModalProps {
@@ -17,20 +19,21 @@ interface EventModalProps {
   setEvents: Dispatch<SetStateAction<EventInput[]>>;
 }
 
-// Componente da modal
 const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, setEvents }) => {
   const { data: session } = useSession();
   const [editedTitle, setEditedTitle] = useState<string | undefined>(event?.event.title);
   const [editedStart, setEditedStart] = useState<string | undefined>(event?.event.start?.toISOString().slice(0, 16));
   const [editedEnd, setEditedEnd] = useState<string | undefined>(event?.event.end?.toISOString().slice(0, 16));
-
+  const router = useRouter();
 
   const sessionRef = useRef<string | undefined>(session?.user?.accessToken);
+  
 
   useEffect(() => {
-    setEditedTitle(event?.event.title);
-    setEditedStart(event?.event.start?.toISOString().slice(0, 16));
-    setEditedEnd(event?.event.end?.toISOString().slice(0, 16));
+    // Atualiza os estados editados
+    setEditedTitle(event?.event.title || "");
+    setEditedStart(event?.event.start?.toISOString().slice(0, 16) || "");
+    setEditedEnd(event?.event.end?.toISOString().slice(0, 16) || "");
   }, [event]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,21 +48,22 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, setEven
     setEditedEnd(e.target.value);
   };
 
-
   const handleModalClose = () => {
     onClose();
   };
 
+  
+
 
   const handleEventEdit = async (eventId: string) => {
     try {
-      if (!eventId) {
-        console.error("Event ID is undefined or null");
+      if (!eventId || !editedTitle || !editedStart || !editedEnd) {
+        alert("All fields are required");
         return;
       }
-
+  
       console.log('Editing event with ID:', eventId);
-
+  
       const res = await fetch(`http://localhost:8080/events/${eventId}`, {
         method: "PUT",
         headers: {
@@ -72,17 +76,19 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, setEven
           end: editedEnd,
         }),
       });
-
+  
       if (res.ok) {
-        console.log("Event edited successfully");
-
+        alert("Event edited successfully");
+  
         setEvents((prevEvents) => prevEvents.filter((prevEvent) => prevEvent.id !== eventId));
         handleModalClose();
+        // Recarrega a página
+        window.location.reload();
       } else {
-        console.error("Failed to delete event. Status:", res.status);
+        console.error("Failed to edit event. Status:", res.status);
       }
     } catch (error) {
-      console.error("Error deleting event:", error);
+      console.error("Error editing event:", error);
     }
   };
 
@@ -107,6 +113,7 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, setEven
 
         setEvents((prevEvents) => prevEvents.filter((prevEvent) => prevEvent.id !== eventId));
         handleModalClose();
+        window.location.reload();
       } else {
         console.error("Failed to delete event. Status:", res.status);
       }
@@ -202,7 +209,42 @@ const HomePage: React.FC = () => {
   const [events, setEvents] = useState<EventInput[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg | null>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [formState, setFormState] = useState({
+    title: "",
+    start: "",
+    end: "",
+  });
 
+  const sessionRef = useRef<string | undefined>(session?.user?.accessToken);
+
+  const handleEventCreate = async (title: string, start: string, end: string) => {
+    try {
+        const userId = 1; // Substitua pelo ID do usuário relevante EXCLUIR DEPOIS
+        const response = await fetch(`http://localhost:8080/user/${userId}/events`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${sessionRef.current}`,
+            },
+            body: JSON.stringify({
+              title: formState.title,
+              start: formState.start,
+              end: formState.end,
+            }),
+        });
+
+        if (response.ok) {
+            console.log('Event created successfully');
+            // Atualize seu estado ou faça qualquer outra ação necessária
+        } else {
+            console.error('Failed to create event. Status:', response.status);
+        }
+    } catch (error) {
+        console.error('Error creating event:', error);
+    }
+};
+
+  
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -237,10 +279,24 @@ const HomePage: React.FC = () => {
     setModalOpen(false);
   };
 
+  
+
   return (
     <main>
       {/* <Navbar /> */}
 
+      <div className="w-full h-full mt-3 px-3 ">
+                <div className="justify-end flex">
+                    <button className="my-2 border-none bg-[#0F2A50]
+                            text-white py-2 px-4 rounded-lg hover:bg-gradient-to-r from-[#0F2A50] to-[#4F86C6]"
+                        onClick={() => {
+                          
+                        }}
+                        
+                        >
+                        Add Event
+                    </button>
+                </div>
       {/* Calendário */}
       <FullCalendar
         plugins={[
@@ -264,7 +320,9 @@ const HomePage: React.FC = () => {
       />
 
       <EventModal isOpen={modalOpen} onClose={closeModal} event={selectedEvent} setEvents={setEvents} />
+      </div>
     </main>
+    
   );
 };
 
