@@ -28,7 +28,6 @@ const Register: React.FC<RegisterProps> = () => {
       <div className="flex flex-1 items-center justify-center">
         <div className="rounded-lg sm:border-2 px-4 lg:px-24 py-16 lg:max-w-xl sm:max-w-md w-full text-center">
 
-
           <form onSubmit={handleRegister}>
             <h1 className="font-bold tracking-wider text-3xl mb-8 w-full text-gray-600">
               Register</h1>
