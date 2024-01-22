@@ -1,6 +1,6 @@
 "use client"
-import { useState, useEffect, useRef, Dispatch, SetStateAction, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useState, useEffect, useRef, Dispatch, SetStateAction } from "react";
+import { useAuthStore } from "./stores/authStore";    
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import { EventClickArg, EventInput } from "@fullcalendar/core";
@@ -8,8 +8,6 @@ import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import Modal from 'react-modal';
 import Navbar from "./components/navbar/page";
-import { useRouter } from "next/navigation";
-
 
 interface EventModalProps {
   isOpen: boolean;
@@ -21,16 +19,13 @@ interface EventModalProps {
 }
 
 const EventModal: React.FC<EventModalProps> = ({
-  isOpen, onClose, event, setEvents, isEditMode,
-  onAddEvent,
+  isOpen, onClose, event, setEvents, isEditMode
 }) => {
-  const { data: session } = useSession();
+  const { token, userId } = useAuthStore();
+  
   const [editedTitle, setEditedTitle] = useState<string | undefined>(event?.event.title);
   const [editedStart, setEditedStart] = useState<string | undefined>(event?.event.start?.toISOString().slice(0, 16));
   const [editedEnd, setEditedEnd] = useState<string | undefined>(event?.event.end?.toISOString().slice(0, 16));
-
-  const sessionRef = useRef<string | undefined>(session?.user?.accessToken);
-
 
   useEffect(() => {
     setEditedTitle(event?.event.title || "");
@@ -55,8 +50,6 @@ const EventModal: React.FC<EventModalProps> = ({
     onClose();
   };
 
-
-  // TODO: USER ID 1
   const handleAddEvent = async () => {
     try {
       if (!editedTitle || !editedStart || !editedEnd) {
@@ -64,11 +57,11 @@ const EventModal: React.FC<EventModalProps> = ({
         return;
       }
 
-      const res = await fetch("http://localhost:8080/events/user/1/events", {
+      const res = await fetch(`http://localhost:8080/events/user/${userId}/events`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${sessionRef.current}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           title: editedTitle,
@@ -82,7 +75,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
 
         handleModalClose();
-        window.location.reload();
+        // window.location.reload();
       
         const updatedEvents = await res.json();
         setEvents(updatedEvents);
@@ -111,7 +104,7 @@ const EventModal: React.FC<EventModalProps> = ({
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${sessionRef.current}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           title: editedTitle,
@@ -125,7 +118,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
         setEvents((prevEvents) => prevEvents.filter((prevEvent) => prevEvent.id !== eventId));
         handleModalClose();
-        window.location.reload();
+        // window.location.reload();
       } 
       else if (res.status === 400) {
         alert("Overlapping events not allowed")
@@ -149,7 +142,7 @@ const EventModal: React.FC<EventModalProps> = ({
       const res = await fetch(`http://localhost:8080/events/${eventId}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${sessionRef.current}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -158,7 +151,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
         setEvents((prevEvents) => prevEvents.filter((prevEvent) => prevEvent.id !== eventId));
         handleModalClose();
-        window.location.reload();
+        // window.location.reload();
       } else {
         console.error("Failed to delete event. Status:", res.status);
       }
@@ -166,8 +159,6 @@ const EventModal: React.FC<EventModalProps> = ({
       console.error("Error deleting event:", error);
     }
   };
-
-
 
   return (
     <div>
@@ -226,6 +217,7 @@ const EventModal: React.FC<EventModalProps> = ({
           </div>
         
         <div className="flex place-content-around">
+        {isEditMode ?  (
         
             <button
               className="border-2 my-2 mx-3 border-red-500 focus:outline-none bg-white text-red-500 font-bold tracking-wider block w-full p-2 
@@ -235,7 +227,9 @@ const EventModal: React.FC<EventModalProps> = ({
             >
               Delete
             </button>
-          
+          ) : (
+            ""
+          )}
           <button
             className="border-2 my-2 mx-3 border-[#0F2A50] focus:outline-none bg-[#0F2A50]
                text-white font-bold tracking-wider block w-full p-2 rounded-lg focus:border-gray-700 hover:bg-gradient-to-r from-[#0F2A50] to-[#4F86C6]"
@@ -251,39 +245,23 @@ const EventModal: React.FC<EventModalProps> = ({
 
 
 const HomePage: React.FC = () => {
-  const { data: session } = useSession();
   const [events, setEvents] = useState<EventInput[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg | null>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
-  const [newEventTitle, setNewEventTitle] = useState<string>("");
-  const [newEventStart, setNewEventStart] = useState<string>("");
-  const [newEventEnd, setNewEventEnd] = useState<string>("");
+  const { token, userId } = useAuthStore();
 
   const handleAddEventClick = () => {
     setModalOpen(true);
   };
 
-  const handleNewEventTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewEventTitle(e.target.value);
-  };
-
-  const handleNewEventStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewEventStart(e.target.value);
-  };
-
-  const handleNewEventEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewEventEnd(e.target.value);
-  };
-
-// TODO: USER ID 1
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await fetch("http://localhost:8080/user/1/events", {
+        const res = await fetch(`http://localhost:8080/user/${userId}/events`, {
           method: "GET",
           headers: {
-            authorization: `Bearer ${session?.user.accessToken}`,
+            authorization: `Bearer ${token}`,
           },
         });
 
@@ -299,7 +277,7 @@ const HomePage: React.FC = () => {
     };
 
     fetchEvents();
-  }, [session]);
+  }, [token, userId]);
 
   const handleEventClick = (info: EventClickArg) => {
     setSelectedEvent(info);
@@ -314,7 +292,7 @@ const HomePage: React.FC = () => {
 
   return (
     <main>
-      {/* <Navbar /> */}
+      <Navbar />
 
       <div className="w-full h-full mt-3 px-3 ">
         <div className="justify-end flex">

@@ -1,20 +1,23 @@
 'use client'
-import { useForm } from "react-hook-form";
-import { useContext, useEffect } from "react";
-import { signOut, useSession } from "next-auth/react";
+
 import { useRouter } from "next/navigation";
+import { useAuthStore } from '@/app/stores/authStore';
+import { MouseEvent } from 'react';
 
 
 const Navbar = () => {
-    const {data: session} = useSession();
-    console.log({session});
-    const route = useRouter();
+    const { nameUser } = useAuthStore();
+    const router = useRouter();
+    const { logout } = useAuthStore();
 
-    useEffect(() => {
-        if (!session?.user) {
-            route.push('/login');
-        }
-    }, [session]);
+    const handleLogout = (e: MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+    
+        logout();
+    
+        router.push('/login');
+      };
+
 
     return (
         <div>
@@ -23,9 +26,9 @@ const Navbar = () => {
                 <div className="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl p-4">
                     <h1 className="self-center text-xl font-semibold whitespace-nowrap text-[#0F2A50] dark:text-white">Calendar</h1>
                     <div className="flex items-center space-x-6 rtl:space-x-reverse">
-                        <p className="text-sm font-medium text-[#0F2A50] dark:text-gray-400">{session?.user.login}</p>
+                        <p className="text-sm font-medium text-[#0F2A50] dark:text-gray-400">{  `Welcome, ${nameUser}` }</p>
                         <a href="#" className="text-sm  text-blue-600 dark:text-blue-500 hover:underline"
-                        onClick={() => signOut()}    
+                        onClick={handleLogout}    
                         >Logout</a>
                     </div>
                 </div>

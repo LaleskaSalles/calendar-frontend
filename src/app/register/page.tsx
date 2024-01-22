@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import useAuthStore from '../stores/useAuthStore';
 
 interface RegisterProps { }
 
@@ -15,8 +16,9 @@ const Register: React.FC<RegisterProps> = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:8080/user/register', { login, password });
-      console.log('Register successful', response.data);
+      // const response = await axios.post('http://localhost:8080/user/register', { login, password });
+      await useAuthStore.getState().register(login, password);
+      // console.log('Register successful', response.data);
       setLogin('');
       setPassword('');
       alert('Register successful');
@@ -45,7 +47,7 @@ const Register: React.FC<RegisterProps> = () => {
           <form onSubmit={handleRegister}>
             <h1 className="font-bold tracking-wider text-3xl mb-8 w-full text-gray-600">Welcome</h1>
             <div>
-              <input placeholder='Login' className="bg-gray-200 border-2 border-gray-100 focus:outline-none bg-gray-100 block w-full py-2 px-4 rounded-lg focus:border-gray-700"
+              <input placeholder='Login' className="bg-gray-200 border-2 border-gray-100 focus:outline-none  block w-full py-2 px-4 rounded-lg focus:border-gray-700"
                 type="text"
                 id="login"
                 value={login}
@@ -54,7 +56,7 @@ const Register: React.FC<RegisterProps> = () => {
               />
             </div>
             <div>
-              <input placeholder='Password' className="bg-gray-200 border-2 border-gray-100 focus:outline-none bg-gray-100 block w-full py-2 px-4 rounded-lg focus:border-gray-700"
+              <input placeholder='Password' className="bg-gray-200 border-2 border-gray-100 focus:outline-none  block w-full py-2 px-4 rounded-lg focus:border-gray-700"
                 type="password"
                 id="password"
                 value={password}

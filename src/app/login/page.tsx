@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+// import { useAuthStore } from '../stores/authStore';
+import useAuthStore from '../stores/useAuthStore';
+
 
 
 const Login: React.FC = () => {
@@ -15,13 +18,25 @@ const Login: React.FC = () => {
     e.preventDefault();
 
     try {
-      const { data } = await axios.post('http://localhost:8080/user/login', credentials);
-      localStorage.setItem('token', data.token);
+
+      const response = await useAuthStore.getState().signIn(credentials.login, credentials.password);
+
+      // setUser(response.data);
+      // setAuthentication(true); 
+      // setCookie('token', response.data.token);
+
+      
+      
+
+      
+      // const { data } = await axios.post('http://localhost:8080/user/login', credentials);
+      // useAuthStore.getState().setAuthData(data.token, data.userId); 
+      // localStorage.setItem('token', data.token);
+
       router.push('/');
-      return data;
+      // return data;
     } catch (error: any) {
       if (error.response?.status === 401) {
-        // Exibir um alerta para senha ou login incorretos
         alert('Incorrect Login or Password');
       } else {
         console.error('Erro durante o login:', error);
@@ -39,7 +54,7 @@ const Login: React.FC = () => {
             <h1 className="font-bold tracking-wider text-3xl mb-8 w-full text-gray-600">
               Login</h1>
             <div>
-              <input placeholder='Login' className="bg-gray-200 border-2 border-gray-100 focus:outline-none bg-gray-100 block w-full py-2 px-4 rounded-lg focus:border-gray-700"
+              <input placeholder='Login' className="bg-gray-200 border-2 border-gray-100 focus:outline-none block w-full py-2 px-4 rounded-lg focus:border-gray-700"
                 type="text"
                 id="login"
                 value={credentials.login}
@@ -48,7 +63,7 @@ const Login: React.FC = () => {
               />
             </div>
             <div>
-              <input placeholder='Password' className="bg-gray-200 border-2 border-gray-100 focus:outline-none bg-gray-100 block w-full py-2 px-4 rounded-lg focus:border-gray-700"
+              <input placeholder='Password' className="bg-gray-200 border-2 border-gray-100 focus:outline-none block w-full py-2 px-4 rounded-lg focus:border-gray-700"
                 type="password"
                 id="password"
                 value={credentials.password}
