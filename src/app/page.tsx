@@ -8,7 +8,6 @@ import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import Modal from 'react-modal';
 import Navbar from "./components/navbar/page";
-import { preventDefault } from "@fullcalendar/core/internal";
 import { useRouter } from "next/navigation";
 
 
@@ -17,20 +16,23 @@ interface EventModalProps {
   onClose: () => void;
   event: EventClickArg | null;
   setEvents: Dispatch<SetStateAction<EventInput[]>>;
+  isEditMode: boolean;
+  onAddEvent: (title: string, start: string, end: string) => void;
 }
 
-const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, setEvents }) => {
+const EventModal: React.FC<EventModalProps> = ({
+  isOpen, onClose, event, setEvents, isEditMode,
+  onAddEvent,
+}) => {
   const { data: session } = useSession();
   const [editedTitle, setEditedTitle] = useState<string | undefined>(event?.event.title);
   const [editedStart, setEditedStart] = useState<string | undefined>(event?.event.start?.toISOString().slice(0, 16));
   const [editedEnd, setEditedEnd] = useState<string | undefined>(event?.event.end?.toISOString().slice(0, 16));
-  const router = useRouter();
 
   const sessionRef = useRef<string | undefined>(session?.user?.accessToken);
-  
+
 
   useEffect(() => {
-    // Atualiza os estados editados
     setEditedTitle(event?.event.title || "");
     setEditedStart(event?.event.start?.toISOString().slice(0, 16) || "");
     setEditedEnd(event?.event.end?.toISOString().slice(0, 16) || "");
@@ -46,14 +48,55 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, setEven
 
   const handleEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditedEnd(e.target.value);
+
   };
 
   const handleModalClose = () => {
     onClose();
   };
 
-  
 
+  // TODO: USER ID 1
+  const handleAddEvent = async () => {
+    try {
+      if (!editedTitle || !editedStart || !editedEnd) {
+        alert("All fields are required");
+        return;
+      }
+
+      const res = await fetch("http://localhost:8080/events/user/1/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionRef.current}`,
+        },
+        body: JSON.stringify({
+          title: editedTitle,
+          start: editedStart,
+          end: editedEnd,
+        }),
+      });
+
+      if (res.ok) {
+        alert("Event added successfully");
+
+
+        handleModalClose();
+        window.location.reload();
+      
+        const updatedEvents = await res.json();
+        setEvents(updatedEvents);
+
+        
+      } else if (res.status === 400) {
+        alert("Overlapping events not allowed")
+      } else {
+        console.error("Failed to add event. Status:", res.status);
+      }
+    } catch (error) {
+      console.error("Error adding event:", error);
+    }
+  };
 
   const handleEventEdit = async (eventId: string) => {
     try {
@@ -61,9 +104,9 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, setEven
         alert("All fields are required");
         return;
       }
-  
+
       console.log('Editing event with ID:', eventId);
-  
+
       const res = await fetch(`http://localhost:8080/events/${eventId}`, {
         method: "PUT",
         headers: {
@@ -76,15 +119,17 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, setEven
           end: editedEnd,
         }),
       });
-  
+
       if (res.ok) {
         alert("Event edited successfully");
-  
+
         setEvents((prevEvents) => prevEvents.filter((prevEvent) => prevEvent.id !== eventId));
         handleModalClose();
-        // Recarrega a página
         window.location.reload();
-      } else {
+      } 
+      else if (res.status === 400) {
+        alert("Overlapping events not allowed")
+      }else {
         console.error("Failed to edit event. Status:", res.status);
       }
     } catch (error) {
@@ -155,47 +200,48 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, setEven
             X
           </button>
         </div>
-        {event && (
+       
           <div className="p-2">
             <label>Title:</label>
             <input
               className="border-2 border-gray-100 focus:outline-none bg-gray-100 block w-full py-2 px-4 rounded-lg focus:border-gray-700"
               type="text"
               value={editedTitle}
-              onChange={handleTitleChange}
+              onChange={handleTitleChange }
             />
             <label>Start:</label>
             <input
               className="border-2 border-gray-100 focus:outline-none bg-gray-100 block w-full py-2 px-4 rounded-lg focus:border-gray-700"
               type="datetime-local"
-              value={editedStart}
-              onChange={handleStartChange}
+              value={ editedStart}
+              onChange={ handleStartChange }
             />
             <label>End:</label>
             <input
               className="border-2 border-gray-100 focus:outline-none bg-gray-100 block w-full py-2 px-4 rounded-lg focus:border-gray-700"
               type="datetime-local"
               value={editedEnd}
-              onChange={handleEndChange}
+              onChange={ handleEndChange}
             />
           </div>
-        )}
+        
         <div className="flex place-content-around">
-          <button
-            className="border-2 my-2 mx-3 border-red-500 focus:outline-none bg-white text-red-500 font-bold tracking-wider block w-full p-2 
+        
+            <button
+              className="border-2 my-2 mx-3 border-red-500 focus:outline-none bg-white text-red-500 font-bold tracking-wider block w-full p-2 
             rounded-lg focus:border-gray-700 hover:bg-gradient-to-r from-white to-red-500"
-            type="button"
-            onClick={() => event && handleEventDelete(event.event.id || "")}
-          >
-            Delete
-          </button>
+              type="button"
+              onClick={() =>  (event && handleEventDelete(event.event.id || ""))}
+            >
+              Delete
+            </button>
+          
           <button
             className="border-2 my-2 mx-3 border-[#0F2A50] focus:outline-none bg-[#0F2A50]
-    text-white font-bold tracking-wider block w-full p-2 rounded-lg focus:border-gray-700 hover:bg-gradient-to-r from-[#0F2A50] to-[#4F86C6]"
+               text-white font-bold tracking-wider block w-full p-2 rounded-lg focus:border-gray-700 hover:bg-gradient-to-r from-[#0F2A50] to-[#4F86C6]"
             type="button"
-            onClick={() => event && handleEventEdit(event.event.id || "")}
-          >
-            Save
+            onClick={() => isEditMode ? (event && handleEventEdit(event.event.id || "")) : (console.log('Before add event'), handleAddEvent())}       >
+        {isEditMode ? 'Save' : 'Add'}
           </button>
         </div>
       </Modal>
@@ -209,42 +255,28 @@ const HomePage: React.FC = () => {
   const [events, setEvents] = useState<EventInput[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg | null>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [formState, setFormState] = useState({
-    title: "",
-    start: "",
-    end: "",
-  });
 
-  const sessionRef = useRef<string | undefined>(session?.user?.accessToken);
+  const [newEventTitle, setNewEventTitle] = useState<string>("");
+  const [newEventStart, setNewEventStart] = useState<string>("");
+  const [newEventEnd, setNewEventEnd] = useState<string>("");
 
-  const handleEventCreate = async (title: string, start: string, end: string) => {
-    try {
-        const userId = 1; // Substitua pelo ID do usuário relevante EXCLUIR DEPOIS
-        const response = await fetch(`http://localhost:8080/user/${userId}/events`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${sessionRef.current}`,
-            },
-            body: JSON.stringify({
-              title: formState.title,
-              start: formState.start,
-              end: formState.end,
-            }),
-        });
+  const handleAddEventClick = () => {
+    setModalOpen(true);
+  };
 
-        if (response.ok) {
-            console.log('Event created successfully');
-            // Atualize seu estado ou faça qualquer outra ação necessária
-        } else {
-            console.error('Failed to create event. Status:', response.status);
-        }
-    } catch (error) {
-        console.error('Error creating event:', error);
-    }
-};
+  const handleNewEventTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewEventTitle(e.target.value);
+  };
 
-  
+  const handleNewEventStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewEventStart(e.target.value);
+  };
+
+  const handleNewEventEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewEventEnd(e.target.value);
+  };
+
+// TODO: USER ID 1
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -279,50 +311,53 @@ const HomePage: React.FC = () => {
     setModalOpen(false);
   };
 
-  
 
   return (
     <main>
       {/* <Navbar /> */}
 
       <div className="w-full h-full mt-3 px-3 ">
-                <div className="justify-end flex">
-                    <button className="my-2 border-none bg-[#0F2A50]
+        <div className="justify-end flex">
+          <button className="my-2 border-none bg-[#0F2A50]
                             text-white py-2 px-4 rounded-lg hover:bg-gradient-to-r from-[#0F2A50] to-[#4F86C6]"
-                        onClick={() => {
-                          
-                        }}
-                        
-                        >
-                        Add Event
-                    </button>
-                </div>
-      {/* Calendário */}
-      <FullCalendar
-        plugins={[
-          dayGridPlugin,
-          interactionPlugin,
-          timeGridPlugin,
-        ]}
-        headerToolbar={{
-          left: "prev,next today",
-          center: "title",
-          right: "dayGridMonth,timeGridWeek,timeGridDay",
-        }}
-        height={750}
-        nowIndicator={false}
-        editable={false}
-        droppable={false}
-        selectable={false}
-        selectMirror={false}
-        events={events}
-        eventClick={(info) => handleEventClick(info)}
-      />
+            onClick={handleAddEventClick}
+          >
+            Add Event
+          </button>
+        </div>
+        {/* Calendário */}
+        <FullCalendar
+          plugins={[
+            dayGridPlugin,
+            interactionPlugin,
+            timeGridPlugin,
+          ]}
+          headerToolbar={{
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
+          }}
+          height={750}
+          nowIndicator={false}
+          editable={false}
+          droppable={false}
+          selectable={false}
+          selectMirror={false}
+          events={events}
+          eventClick={(info) => handleEventClick(info)}
+        />
 
-      <EventModal isOpen={modalOpen} onClose={closeModal} event={selectedEvent} setEvents={setEvents} />
+        <EventModal
+          isOpen={modalOpen}
+          onClose={closeModal}
+          event={selectedEvent}
+          setEvents={setEvents}
+          isEditMode={selectedEvent !== null}
+          onAddEvent={handleAddEventClick}
+        />
       </div>
     </main>
-    
+
   );
 };
 
