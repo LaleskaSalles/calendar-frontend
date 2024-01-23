@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import useAuthStore from '../stores/useAuthStore';
 
 interface RegisterProps { }
 
@@ -16,13 +15,13 @@ const Register: React.FC<RegisterProps> = () => {
     e.preventDefault();
 
     try {
-      // const response = await axios.post('http://localhost:8080/user/register', { login, password });
-      await useAuthStore.getState().register(login, password);
-      // console.log('Register successful', response.data);
+      const response = await axios.post('http://localhost:8080/user/register', { login, password });
+      console.log('Register successful', response.data);
       setLogin('');
       setPassword('');
       alert('Register successful');
     } catch (error) {
+
       if (axios.isAxiosError(error) && error.response?.status === 400) {
         setErrorMessage('Erro ao registrar usuário. Verifique as informações e tente novamente.');
         
@@ -36,6 +35,7 @@ const Register: React.FC<RegisterProps> = () => {
 
       console.error('Erro durante o registro:', error);
     }
+  
   };
 
   return (
@@ -75,7 +75,7 @@ const Register: React.FC<RegisterProps> = () => {
               className="border-2 my-2 border-[#0F2A50] focus:outline-none bg-white
                       text-[#0F2A50] font-bold tracking-wider block w-full p-2 rounded-lg focus:border-gray-700 hover:bg-gradient-to-r from-white to-[#0F2A50]"
               type="button"
-              onClick={() => navigate.push('/login')}>
+              onClick={() => navigate.push('/')}>
               Go to Login
             </button>
           </form>
