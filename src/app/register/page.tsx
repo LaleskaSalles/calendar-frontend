@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface RegisterProps { }
 
@@ -19,21 +21,28 @@ const Register: React.FC<RegisterProps> = () => {
       console.log('Register successful', response.data);
       setLogin('');
       setPassword('');
-      alert('Register successful');
+      toast.success('User registered successfully', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     } catch (error) {
+      console.error('Error during registration:', error);
 
       if (axios.isAxiosError(error) && error.response?.status === 400) {
         setErrorMessage('Erro ao registrar usuário. Verifique as informações e tente novamente.');
         
         if (error.response?.data.includes("already exists")) {
-          window.alert("The Login already exists.");
+          toast.error('The login already exists', {
+            position: 'top-right',
+            autoClose: 3000,
+          });
         }
       } else {
-        setErrorMessage('Erro ao registrar usuário. Tente novamente mais tarde.');
-        window.alert('Erro ao registrar usuário. Tente novamente mais tarde.');
+        toast.error('Error registering user. Please check the information and try again.', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
       }
-
-      console.error('Erro durante o registro:', error);
     }
   
   };

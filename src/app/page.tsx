@@ -3,27 +3,38 @@ import { useForm } from 'react-hook-form';
 import { useContext } from 'react';
 import MyContext from '@/contextAPI/myContext';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-
+interface MyContextType {
+  loginUser: (formData: any) => Promise<any>;
+}
+ 
 const HomePage: React.FC = () => {
   const router = useRouter()
-  const { loginUser } = useContext(MyContext)
-
+  const { loginUser } = useContext(MyContext) as MyContextType;
   const { register, handleSubmit } = useForm()
+
   const submit = async (formData: any) => {
+    try {
+      const response = await loginUser(formData)
+      if (response && response.token) {
+        localStorage.setItem('token', response.token)
+        localStorage.setItem('id', response.userId)
+        router.push('/events')
+      } else {
+        toast.error('Incorrect login or password.', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+      }
 
-    const response = await loginUser(formData)
-     if(  response.token ) {
-      localStorage.setItem('token',response.token)
-      localStorage.setItem('id',response.userId)
-      router.push('/events')
-     } else {
-      alert('Incorrect login or password.');
-     }
- 
-    console.log('responsePAGE', response)
-    return response
+      console.log('responsePAGE', response)
+      return response
 
+    } catch (error) {
+      console.error('Error:', error);
+    }
   }
   return (
     <main>
@@ -62,9 +73,9 @@ const HomePage: React.FC = () => {
               <button
                 className="border-2 my-2 border-[#0F2A50] focus:outline-none bg-white
                             text-[#0F2A50] font-bold tracking-wider block w-full p-2 rounded-lg focus:border-gray-700 hover:bg-gradient-to-r from-white to-[#0F2A50]"
-                type="button" 
+                type="button"
                 onClick={() => router.push('/register')}
-                >
+              >
                 Create an account
               </button>
             </form>
