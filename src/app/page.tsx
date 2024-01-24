@@ -9,7 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 interface MyContextType {
   loginUser: (formData: any) => Promise<any>;
 }
- 
+
 const HomePage: React.FC = () => {
   const router = useRouter()
   const { loginUser } = useContext(MyContext) as MyContextType;
@@ -29,7 +29,6 @@ const HomePage: React.FC = () => {
         });
       }
 
-      console.log('responsePAGE', response)
       return response
 
     } catch (error) {

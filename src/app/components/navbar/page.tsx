@@ -2,17 +2,21 @@
 
 import MyContext from "@/contextAPI/myContext";
 import { useRouter } from "next/navigation";
-import { Router } from "next/router";
-import { MouseEvent, useContext, useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 
 
 const Navbar = () => {
     const router = useRouter()
-    const { logout, tokenLocal } = useContext(MyContext)
+    const contextValue = useContext(MyContext);
+
+    const { logout, tokenLocal } = contextValue || {}
+
     const handleLogout = () => {
-        logout()
-        router.push('/')
-    }
+        if (logout) {
+            logout();
+            router.push('/');
+        }
+    };
     useEffect(() => {
         if (tokenLocal === '') {
             router.push('/')

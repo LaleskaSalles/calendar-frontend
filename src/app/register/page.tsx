@@ -30,7 +30,7 @@ const Register: React.FC<RegisterProps> = () => {
 
       if (axios.isAxiosError(error) && error.response?.status === 400) {
         setErrorMessage('Erro ao registrar usuário. Verifique as informações e tente novamente.');
-        
+
         if (error.response?.data.includes("already exists")) {
           toast.error('The login already exists', {
             position: 'top-right',
@@ -44,7 +44,7 @@ const Register: React.FC<RegisterProps> = () => {
         });
       }
     }
-  
+
   };
 
   return (
