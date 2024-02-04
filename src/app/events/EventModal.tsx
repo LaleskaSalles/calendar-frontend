@@ -4,6 +4,7 @@ import { EventClickArg, EventInput } from "@fullcalendar/core";
 import Modal from 'react-modal';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import moment from "moment";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -21,15 +22,15 @@ const EventModal: React.FC<EventModalProps> = ({
   const [userId, setUserId] = useState('');
 
   const [editedTitle, setEditedTitle] = useState<string | undefined>(event?.event.title);
-  const [editedStart, setEditedStart] = useState<string | undefined>(event?.event.start?.toISOString().slice(0, 16));
-  const [editedEnd, setEditedEnd] = useState<string | undefined>(event?.event.end?.toISOString().slice(0, 16));
+  const [editedStart, setEditedStart] = useState<string | undefined>(event?.event.start ? moment(event.event.start).format('YYYY-MM-DDTHH:mm') : '');
+  const [editedEnd, setEditedEnd] = useState<string | undefined>(event?.event.end ? moment(event.event.end).format('YYYY-MM-DDTHH:mm') : '');
 
   useEffect(() => {
     setToken(localStorage.getItem('token') || '')
     setUserId(localStorage.getItem('id') || '')
     setEditedTitle(event?.event.title || "");
-    setEditedStart(event?.event.start?.toISOString().slice(0, 16) || "");
-    setEditedEnd(event?.event.end?.toISOString().slice(0, 16) || "");
+    setEditedStart(event?.event.start ? moment(event.event.start).format('YYYY-MM-DDTHH:mm') : '');
+    setEditedEnd(event?.event.end ? moment(event.event.end).format('YYYY-MM-DDTHH:mm') : '');
   }, [event]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,7 +133,6 @@ const EventModal: React.FC<EventModalProps> = ({
         setEvents((prevEvents) => prevEvents.filter((prevEvent) => prevEvent.id !== eventId));
         handleModalClose();
 
-
       }
       else if (res.status === 400) {
         toast.warning("Overlapping events not allowed"), {
@@ -208,7 +208,7 @@ const EventModal: React.FC<EventModalProps> = ({
         onRequestClose={handleModalClose}
       >
         <div className="flex flex-row justify-around">
-          <h2 className="text-center text-xl py-2 text-[#0F2A50]">Detalhes do Evento</h2>
+          <h2 className="text-center text-xl py-2 text-[#0F2A50]">Event details</h2>
 
           <button
             className="border-2 rounded-full py-2 px-3  border-gray-100 focus:outline-none bg-gray-100 "
